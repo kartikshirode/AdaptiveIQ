@@ -4,11 +4,11 @@ Usage:
     python -m data.seed_questions
 """
 
-import asyncio
 import os
 
+import certifi
 from dotenv import load_dotenv
-from motor.motor_asyncio import AsyncIOMotorClient
+from pymongo import MongoClient
 
 load_dotenv()
 
@@ -220,24 +220,24 @@ QUESTIONS = [
 ]
 
 
-async def seed():
+def seed():
     uri = os.getenv("MONGO_URI", "")
     if not uri:
         print("ERROR: MONGO_URI not set in .env")
         return
 
-    client = AsyncIOMotorClient(uri)
+    client = MongoClient(uri, tlsCAFile=certifi.where())
     db = client["adaptive_engine"]
     coll = db["questions"]
 
     inserted = 0
     skipped = 0
     for q in QUESTIONS:
-        existing = await coll.find_one({"_id": q["_id"]})
+        existing = coll.find_one({"_id": q["_id"]})
         if existing:
             skipped += 1
         else:
-            await coll.insert_one(q)
+            coll.insert_one(q)
             inserted += 1
 
     print(f"Seeding complete: {inserted} inserted, {skipped} skipped (already exist).")
@@ -245,4 +245,4 @@ async def seed():
 
 
 if __name__ == "__main__":
-    asyncio.run(seed())
+    seed()
