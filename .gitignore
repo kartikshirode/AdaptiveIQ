@@ -28,5 +28,9 @@ env/
 Thumbs.db
 desktop.ini
 
+# Misc
+null
+*.pdf
+
 # Logs
 *.log

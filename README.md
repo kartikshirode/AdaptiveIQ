@@ -31,7 +31,7 @@ Student  →  FastAPI Backend  →  Adaptive Engine  →  MongoDB
 | **Randomized Selection** | Adds unpredictability by selecting from top 5 closest questions |
 | **Real-time Ability Tracking** | Ability updates after every answer (+0.07 correct, −0.07 incorrect), clamped to [0.1, 1.0] |
 | **Session Management** | Tracks answer history, accuracy, and ability progression per session |
-| **AI Study Plans** | Generates personalized 3-step study plans via NVIDIA Kimi K2 after 15 questions |
+| **AI Study Plans** | Generates personalized 3-step study plans via NVIDIA Kimi K2 after 10 questions |
 | **Duplicate Prevention** | No question is repeated within the same session |
 | **Input Validation** | Session IDs are validated; malformed requests return clear error messages |
 
@@ -127,7 +127,16 @@ Navigate to **http://localhost:8000** — Beautiful dark-themed UI with adaptive
 
 ---
 
-## 📡 API Reference
+## 📡 API Documentation
+
+> Interactive docs available at **http://localhost:8000/docs** (Swagger UI) and **http://localhost:8000/redoc** (ReDoc) when the server is running.
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/start-session` | Create a new adaptive testing session |
+| `GET` | `/next-question/{session_id}` | Get next question matched to student's ability |
+| `POST` | `/submit-answer` | Submit an answer and update ability score |
+| `GET` | `/study-plan/{session_id}` | Generate AI study plan (after 10 questions) |
 
 ### `POST /start-session`
 
@@ -188,7 +197,7 @@ Submits an answer and updates the ability score.
 
 ### `GET /study-plan/{session_id}`
 
-Generates a personalized study plan via NVIDIA Kimi K2. **Requires 15 answered questions.**
+Generates a personalized study plan via NVIDIA Kimi K2. **Requires 10 answered questions.**
 
 **Response** `200 OK`
 ```json
