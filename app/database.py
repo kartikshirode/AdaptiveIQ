@@ -1,5 +1,4 @@
 import os
-
 import certifi
 from dotenv import load_dotenv
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -14,12 +13,36 @@ questions_collection = None
 sessions_collection = None
 
 
+def get_client():
+    global client
+    if client is None:
+        client = AsyncIOMotorClient(MONGO_URI, tlsCAFile=certifi.where(), serverSelectionTimeoutMS=5000)
+    return client
+
+
+def get_db():
+    global db
+    if db is None:
+        db = get_client()["adaptive_engine"]
+    return db
+
+
+def get_questions_collection():
+    global questions_collection
+    if questions_collection is None:
+        questions_collection = get_db()["questions"]
+    return questions_collection
+
+
+def get_sessions_collection():
+    global sessions_collection
+    if sessions_collection is None:
+        sessions_collection = get_db()["sessions"]
+    return sessions_collection
+
+
 async def connect_db():
-    global client, db, questions_collection, sessions_collection
-    client = AsyncIOMotorClient(MONGO_URI, tlsCAFile=certifi.where())
-    db = client["adaptive_engine"]
-    questions_collection = db["questions"]
-    sessions_collection = db["sessions"]
+    pass
 
 
 async def close_db():

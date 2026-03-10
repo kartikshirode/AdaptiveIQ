@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException
 
 from app.adaptive_engine import select_next_question, update_ability
 from app.ai_service import generate_study_plan
-from app.database import questions_collection, sessions_collection
+from app.database import get_questions_collection, get_sessions_collection
 from app.models import QuestionOut, StudyPlanResponse, SubmitAnswerRequest
 
 router = APIRouter()
@@ -30,7 +30,7 @@ async def start_session():
         "correct_answers": 0,
         "history": [],
     }
-    result = await sessions_collection.insert_one(session_doc)
+    result = await get_sessions_collection().insert_one(session_doc)
     return {"session_id": str(result.inserted_id), "ability": 0.5}
 
 
@@ -39,13 +39,13 @@ async def start_session():
 async def next_question(session_id: str):
     """Return the question closest to the student's current ability level."""
     oid = get_valid_object_id(session_id)
-    session = await sessions_collection.find_one({"_id": oid})
+    session = await get_sessions_collection().find_one({"_id": oid})
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
     answered_ids = [h["question_id"] for h in session["history"]]
     question = await select_next_question(
-        session["ability_score"], answered_ids, questions_collection
+        session["ability_score"], answered_ids, get_questions_collection()
     )
 
     if not question:
@@ -59,11 +59,11 @@ async def next_question(session_id: str):
 async def submit_answer(payload: SubmitAnswerRequest):
     """Submit an answer, update ability score, and return feedback."""
     oid = get_valid_object_id(payload.session_id)
-    session = await sessions_collection.find_one({"_id": oid})
+    session = await get_sessions_collection().find_one({"_id": oid})
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
-    question = await questions_collection.find_one({"_id": payload.question_id})
+    question = await get_questions_collection().find_one({"_id": payload.question_id})
     if not question:
         raise HTTPException(status_code=404, detail="Question not found")
 
@@ -82,7 +82,7 @@ async def submit_answer(payload: SubmitAnswerRequest):
         "topic": question["topic"],
     }
 
-    await sessions_collection.update_one(
+    await get_sessions_collection().update_one(
         {"_id": oid},
         {
             "$set": {"ability_score": new_ability},
@@ -107,7 +107,7 @@ async def submit_answer(payload: SubmitAnswerRequest):
 async def study_plan(session_id: str):
     """Generate a personalized study plan (available after 10+ questions)."""
     oid = get_valid_object_id(session_id)
-    session = await sessions_collection.find_one({"_id": oid})
+    session = await get_sessions_collection().find_one({"_id": oid})
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
