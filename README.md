@@ -272,24 +272,4 @@ Next question = random.choice(top 5 closest questions by |difficulty − ability
 | Initial question predictability | Added 10+ questions near difficulty 0.5 for balanced start |
 | API quota limits | Switched from Gemini to NVIDIA Kimi K2 which has generous free tier |
 
----
 
-## 📋 Submission Checklist
-
-- [x] GitHub repository created
-- [x] README with full documentation
-- [x] MongoDB schema documented
-- [x] API endpoints working (4 endpoints)
-- [x] Adaptive algorithm explained
-- [x] 50 GRE-style seed questions (2 topics)
-- [x] AI-powered study plan generation
-- [x] AI usage documented
-- [x] Error handling & input validation
-- [x] `.gitignore` configured
-- [x] Beautiful dark-themed UI
-
----
-
-## 📄 License
-
-This project is for educational and internship evaluation purposes.
