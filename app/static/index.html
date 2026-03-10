@@ -189,7 +189,7 @@
         }
         .progress-stats {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(2, 1fr);
             gap: 0.5rem;
             margin-top: 1rem;
             padding-top: 1rem;
@@ -807,17 +807,9 @@
                     <div class="progress-stat-value" id="attemptedQuestions">0</div>
                     <div class="progress-stat-label">Attempted</div>
                 </div>
-                <div class="progress-stat stat-correct">
-                    <div class="progress-stat-value" id="correctDisplay">0</div>
-                    <div class="progress-stat-label">Correct</div>
-                </div>
                 <div class="progress-stat">
                     <div class="progress-stat-value" id="remainingQuestions">10</div>
                     <div class="progress-stat-label">Remaining</div>
-                </div>
-                <div class="progress-stat stat-ability">
-                    <div class="progress-stat-value" id="abilityDisplay">0.50</div>
-                    <div class="progress-stat-label">Ability</div>
                 </div>
             </div>
         </div>
@@ -849,7 +841,7 @@
                     <div class="start-feature">
                         <div class="start-feature-icon">🤖</div>
                         <div class="start-feature-label">AI Plan</div>
-                        <div class="start-feature-value">Gemini</div>
+                        <div class="start-feature-value">Kimi K2</div>
                     </div>
                 </div>
 
@@ -871,7 +863,6 @@
             </div>
             <p class="question-text" id="questionText">Loading question...</p>
             <div class="options" id="options"></div>
-            <div class="feedback" id="feedback"></div>
             <button class="btn btn-primary" id="submitBtn" onclick="submitAnswer()" disabled>Submit Answer</button>
             <div class="keyboard-hint" id="keyboardHint">
                 Press <kbd>1</kbd>-<kbd>4</kbd> to select &middot; <kbd>Enter</kbd> to submit
@@ -965,8 +956,6 @@
             document.getElementById('progressFill').style.width = `${(questionsAnswered / MAX_QUESTIONS) * 100}%`;
             document.getElementById('attemptedQuestions').textContent = questionsAnswered;
             document.getElementById('remainingQuestions').textContent = MAX_QUESTIONS - questionsAnswered;
-            document.getElementById('correctDisplay').textContent = correctAnswers;
-            document.getElementById('abilityDisplay').textContent = currentAbility.toFixed(2);
         }
 
         // ── Difficulty badge helper ──
@@ -1071,10 +1060,7 @@
                 optionsDiv.appendChild(btn);
             });
 
-            // Reset feedback & button
-            const feedback = document.getElementById('feedback');
-            feedback.className = 'feedback';
-            feedback.innerHTML = '';
+            // Reset button
             const submitBtn = document.getElementById('submitBtn');
             submitBtn.disabled = true;
             submitBtn.textContent = 'Submit Answer';
@@ -1108,7 +1094,7 @@
 
             const submitBtn = document.getElementById('submitBtn');
             submitBtn.disabled = true;
-            submitBtn.textContent = 'Checking...';
+            submitBtn.textContent = 'Submitting...';
 
             try {
                 const res = await fetch('/submit-answer', {
@@ -1128,44 +1114,12 @@
                 if (result.correct) correctAnswers++;
                 currentAbility = result.new_ability;
 
-                // Feedback
-                const feedback = document.getElementById('feedback');
-                const isCorrect = result.correct;
-                feedback.className = `feedback show ${isCorrect ? 'correct' : 'incorrect'}`;
-                feedback.innerHTML = `
-                    <span class="feedback-icon">${isCorrect ? '✅' : '❌'}</span>
-                    <div>
-                        <strong>${isCorrect ? 'Correct!' : 'Incorrect'}</strong><br>
-                        <span>The answer is: ${escapeHtml(result.correct_answer)}</span>
-                    </div>
-                `;
-
-                // Highlight options
-                document.querySelectorAll('.option').forEach(o => {
-                    o.classList.add('disabled');
-                    const optText = o.querySelector('.option-text').textContent;
-                    if (optText === result.correct_answer) {
-                        o.classList.add('correct-answer');
-                        o.querySelector('.option-icon').textContent = '✓';
-                    } else if (optText === selectedAnswer && !isCorrect) {
-                        o.classList.add('wrong-answer');
-                        o.querySelector('.option-icon').textContent = '✗';
-                    }
-                });
-
                 updateProgress();
-                document.getElementById('keyboardHint').classList.add('hidden');
 
                 if (questionsAnswered >= MAX_QUESTIONS) {
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = '<span>View Results</span> <span>→</span>';
-                    submitBtn.onclick = showResults;
+                    showResults();
                 } else {
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = '<span>Next Question</span> <span>→</span>';
-                    submitBtn.onclick = async () => {
-                        await loadNextQuestion();
-                    };
+                    await loadNextQuestion();
                 }
             } catch (e) {
                 showToast('Error submitting answer. Please try again.', 'error');
