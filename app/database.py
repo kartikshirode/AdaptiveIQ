@@ -11,12 +11,19 @@ client: AsyncIOMotorClient = None  # type: ignore
 db = None
 questions_collection = None
 sessions_collection = None
+_indexes_created = False
 
 
 def get_client():
     global client
     if client is None:
-        client = AsyncIOMotorClient(MONGO_URI, tlsCAFile=certifi.where(), serverSelectionTimeoutMS=5000)
+        client = AsyncIOMotorClient(
+            MONGO_URI, 
+            tlsCAFile=certifi.where(), 
+            serverSelectionTimeoutMS=5000,
+            maxPoolSize=10,
+            minPoolSize=1
+        )
     return client
 
 
@@ -41,8 +48,33 @@ def get_sessions_collection():
     return sessions_collection
 
 
+async def create_indexes():
+    """Create optimized indexes for MongoDB performance."""
+    global _indexes_created
+    if _indexes_created:
+        return
+    
+    try:
+        # Questions collection indexes
+        questions_coll = get_questions_collection()
+        await questions_coll.create_index("difficulty")  # For sorting by difficulty
+        await questions_coll.create_index([("_id", 1)])  # For _id lookups
+        await questions_coll.create_index([("topic", 1)])  # For topic filtering
+        
+        # Sessions collection indexes
+        sessions_coll = get_sessions_collection()
+        await sessions_coll.create_index([("_id", 1)])  # Primary key is automatic
+        await sessions_coll.create_index([("ability_score", 1)])  # For ability sorting
+        
+        _indexes_created = True
+        print("MongoDB indexes created successfully")
+    except Exception as e:
+        print(f"Error creating indexes: {e}")
+
+
 async def connect_db():
-    pass
+    """Initialize database connection and create indexes."""
+    await create_indexes()
 
 
 async def close_db():

@@ -1,17 +1,13 @@
-<div align="center">
-
 # 🧠 AdaptiveIQ — Adaptive Diagnostic Engine
 
 **An AI-driven adaptive testing system that dynamically adjusts question difficulty based on student performance.**
 
-Built with **FastAPI** · **MongoDB Atlas** · **Google Gemini**
+Built with **FastAPI** · **MongoDB Atlas** · **NVIDIA Kimi K2**
 
 [![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248?logo=mongodb&logoColor=white)](https://www.mongodb.com/atlas)
-[![Gemini](https://img.shields.io/badge/Gemini-2.0_Flash-4285F4?logo=google&logoColor=white)](https://ai.google.dev)
-
-</div>
+[![NVIDIA](https://img.shields.io/badge/NVIDIA-Kimi_K2-76B900?logo=nvidia&logoColor=white)](https://build.nvidia.com)
 
 ---
 
@@ -22,7 +18,7 @@ AdaptiveIQ implements a **1-Dimensional Adaptive Testing System** inspired by It
 ```
 Student  →  FastAPI Backend  →  Adaptive Engine  →  MongoDB
                                                        ↓
-                                              Gemini Study Plan
+                                              NVIDIA Kimi K2 Study Plan
 ```
 
 ---
@@ -31,10 +27,11 @@ Student  →  FastAPI Backend  →  Adaptive Engine  →  MongoDB
 
 | Feature | Description |
 |---------|-------------|
-| **Adaptive Question Selection** | Picks the question whose difficulty is closest to the student's current ability |
-| **Real-time Ability Tracking** | Ability updates after every answer (`+0.07` correct, `−0.07` incorrect), clamped to `[0.1, 1.0]` |
+| **Adaptive Question Selection** | Picks questions whose difficulty is closest to the student's current ability |
+| **Randomized Selection** | Adds unpredictability by selecting from top 5 closest questions |
+| **Real-time Ability Tracking** | Ability updates after every answer (+0.07 correct, −0.07 incorrect), clamped to [0.1, 1.0] |
 | **Session Management** | Tracks answer history, accuracy, and ability progression per session |
-| **AI Study Plans** | Generates personalized 3-step study plans via Google Gemini after 10+ questions |
+| **AI Study Plans** | Generates personalized 3-step study plans via NVIDIA Kimi K2 after 15 questions |
 | **Duplicate Prevention** | No question is repeated within the same session |
 | **Input Validation** | Session IDs are validated; malformed requests return clear error messages |
 
@@ -48,7 +45,7 @@ Student  →  FastAPI Backend  →  Adaptive Engine  →  MongoDB
 | Database | MongoDB Atlas (M0 Free) | Cloud-hosted document store |
 | Async Driver | Motor | Non-blocking MongoDB operations |
 | Data Validation | Pydantic v2 | Request/response schemas |
-| AI Integration | Google Gemini (`2.0-flash`) | Study plan generation |
+| AI Integration | NVIDIA Kimi K2 (via OpenAI-compatible API) | Study plan generation |
 | Environment | python-dotenv | Secrets management |
 
 ---
@@ -64,11 +61,13 @@ AdaptiveIQ/
 │   ├── models.py             # Pydantic schemas & response models
 │   ├── adaptive_engine.py    # Ability update & question selection logic
 │   ├── routes.py             # All API endpoints
-│   └── ai_service.py         # Gemini study plan generation
+│   ├── ai_service.py         # NVIDIA Kimi K2 study plan generation
+│   └── static/
+│       └── index.html        # Beautiful dark-themed UI
 │
 ├── data/
 │   ├── __init__.py
-│   └── seed_questions.py     # 22 GRE-style seed questions + CLI seeder
+│   └── seed_questions.py     # 50 GRE-style seed questions
 │
 ├── .env                      # Environment variables (git-ignored)
 ├── .gitignore
@@ -84,7 +83,7 @@ AdaptiveIQ/
 
 - Python 3.10+
 - [MongoDB Atlas account](https://www.mongodb.com/atlas) (free M0 tier)
-- [Google Gemini API key](https://aistudio.google.com/apikey)
+- [NVIDIA API Key](https://build.nvidia.com) (free tier available)
 
 ### 1. Clone the Repository
 
@@ -105,7 +104,7 @@ Create a `.env` file in the project root:
 
 ```env
 MONGO_URI=mongodb+srv://<user>:<password>@cluster0.xxxxx.mongodb.net/?retryWrites=true&w=majority
-GEMINI_API_KEY=your_gemini_api_key
+NVIDIA_API_KEY=nvapi-xxxxxxxxxxxxxxxxxxxxx
 ```
 
 ### 4. Seed the Database
@@ -114,7 +113,7 @@ GEMINI_API_KEY=your_gemini_api_key
 python -m data.seed_questions
 ```
 
-> Seeds 22 GRE-style questions across Algebra, Arithmetic, Geometry, Probability, and Number Properties.
+> Seeds 50 GRE-style questions across Algebra and Arithmetic topics.
 
 ### 5. Start the Server
 
@@ -122,9 +121,9 @@ python -m data.seed_questions
 uvicorn app.main:app --reload
 ```
 
-### 6. Open API Docs
+### 6. Open the Application
 
-Navigate to **http://localhost:8000/docs** — interactive Swagger UI is auto-generated.
+Navigate to **http://localhost:8000** — Beautiful dark-themed UI with adaptive testing!
 
 ---
 
@@ -151,12 +150,12 @@ Returns the next question matched to the student's ability. Correct answer is **
 **Response** `200 OK`
 ```json
 {
-  "_id": "q4",
-  "question": "Simplify: (2x³)(3x²)",
-  "options": ["5x⁵", "6x⁵", "6x⁶", "5x⁶"],
-  "difficulty": 0.5,
+  "_id": "alg_4",
+  "question": "Simplify: x + x + x",
+  "options": ["3x", "x³", "x + 3", "x"],
+  "difficulty": 0.1,
   "topic": "Algebra",
-  "tags": ["exponents"]
+  "tags": ["simplification"]
 }
 ```
 
@@ -170,8 +169,8 @@ Submits an answer and updates the ability score.
 ```json
 {
   "session_id": "65f1a2b3c4d5e6f7a8b9c0d1",
-  "question_id": "q4",
-  "answer": "6x⁵"
+  "question_id": "alg_4",
+  "answer": "3x"
 }
 ```
 
@@ -179,7 +178,7 @@ Submits an answer and updates the ability score.
 ```json
 {
   "correct": true,
-  "correct_answer": "6x⁵",
+  "correct_answer": "3x",
   "new_ability": 0.57,
   "questions_answered": 1
 }
@@ -189,7 +188,7 @@ Submits an answer and updates the ability score.
 
 ### `GET /study-plan/{session_id}`
 
-Generates a personalized study plan via Gemini. **Requires 10+ answered questions.**
+Generates a personalized study plan via NVIDIA Kimi K2. **Requires 15 answered questions.**
 
 **Response** `200 OK`
 ```json
@@ -197,8 +196,8 @@ Generates a personalized study plan via Gemini. **Requires 10+ answered question
   "session_id": "65f1a2b3c4d5e6f7a8b9c0d1",
   "accuracy": 60.0,
   "max_difficulty": 0.75,
-  "weak_topics": ["Algebra", "Probability"],
-  "study_plan": "1. Review algebra fundamentals and core formulas.\n2. Practice medium-difficulty probability problems.\n3. Take timed mixed-topic practice tests."
+  "weak_topics": ["Algebra", "Arithmetic"],
+  "study_plan": "1. Reset foundations: complete one focused Algebra module...\n2. Daily 15-minute micro-drills...\n3. Week-end 30-minute mixed sets..."
 }
 ```
 
@@ -217,8 +216,7 @@ For each answer:
 
     ability = clamp(ability, 0.1, 1.0)
 
-Next question = argmin |question.difficulty − ability|
-                where question not already answered
+Next question = random.choice(top 5 closest questions by |difficulty − ability|)
 ```
 
 **Example progression:**
@@ -238,12 +236,12 @@ Next question = argmin |question.difficulty − ability|
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `_id` | String | Unique question ID (e.g., `"q1"`) |
+| `_id` | String | Unique question ID (e.g., `"alg_1"`) |
 | `question` | String | Question text |
 | `options` | Array\<String\> | Multiple choice options |
 | `correct_answer` | String | Correct option value |
-| `difficulty` | Float | Difficulty level `[0.1 – 1.0]` |
-| `topic` | String | Subject area |
+| `difficulty` | Float | Difficulty level [0.1 – 1.0] |
+| `topic` | String | Subject area (Algebra/Arithmetic) |
 | `tags` | Array\<String\> | Subtopic tags |
 
 ### `sessions` Collection
@@ -262,16 +260,17 @@ Next question = argmin |question.difficulty − ability|
 
 | Tool | Usage |
 |------|-------|
-| **Google Gemini** (`gemini-2.0-flash`) | Generates personalized 3-step GRE study plans from weak topics, accuracy, and max difficulty |
+| **NVIDIA Kimi K2** | Generates personalized 3-step GRE study plans from weak topics, accuracy, and max difficulty |
 | **GitHub Copilot** | Code generation and autocomplete assistance during development |
 
 ### Challenges & Solutions
 
 | Challenge | Solution |
 |-----------|----------|
-| Best difficulty matching strategy | Sorted unanswered questions by absolute distance from ability score |
+| Best difficulty matching strategy | Sorted unanswered questions by absolute distance from ability score, then randomly select from top 5 |
 | Clean session tracking schema | Modular Pydantic models with embedded history array |
-| Robust error handling | ObjectId validation helper + try/except on Gemini API calls |
+| Initial question predictability | Added 10+ questions near difficulty 0.5 for balanced start |
+| API quota limits | Switched from Gemini to NVIDIA Kimi K2 which has generous free tier |
 
 ---
 
@@ -282,11 +281,12 @@ Next question = argmin |question.difficulty − ability|
 - [x] MongoDB schema documented
 - [x] API endpoints working (4 endpoints)
 - [x] Adaptive algorithm explained
-- [x] 22 GRE-style seed questions (5 topics)
+- [x] 50 GRE-style seed questions (2 topics)
 - [x] AI-powered study plan generation
 - [x] AI usage documented
 - [x] Error handling & input validation
 - [x] `.gitignore` configured
+- [x] Beautiful dark-themed UI
 
 ---
 

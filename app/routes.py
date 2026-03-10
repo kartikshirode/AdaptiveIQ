@@ -11,7 +11,7 @@ from app.models import QuestionOut, StudyPlanResponse, SubmitAnswerRequest
 
 router = APIRouter()
 
-MAX_QUESTIONS = 15
+MAX_QUESTIONS = 10
 
 
 def get_valid_object_id(session_id: str) -> ObjectId:
