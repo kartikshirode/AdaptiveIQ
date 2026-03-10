@@ -11,6 +11,8 @@ from app.models import QuestionOut, StudyPlanResponse, SubmitAnswerRequest
 
 router = APIRouter()
 
+MAX_QUESTIONS = 15
+
 
 def get_valid_object_id(session_id: str) -> ObjectId:
     """Validate and convert session_id to ObjectId."""
@@ -42,6 +44,9 @@ async def next_question(session_id: str):
     session = await get_sessions_collection().find_one({"_id": oid})
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
+
+    if session["questions_answered"] >= MAX_QUESTIONS:
+        raise HTTPException(status_code=400, detail=f"Test completed ({MAX_QUESTIONS} questions)")
 
     answered_ids = [h["question_id"] for h in session["history"]]
     question = await select_next_question(
@@ -105,16 +110,16 @@ async def submit_answer(payload: SubmitAnswerRequest):
 # ── GET /study-plan/{session_id} ─────────────────────────────────────
 @router.get("/study-plan/{session_id}", response_model=StudyPlanResponse)
 async def study_plan(session_id: str):
-    """Generate a personalized study plan (available after 10+ questions)."""
+    """Generate a personalized study plan (available after completing test)."""
     oid = get_valid_object_id(session_id)
     session = await get_sessions_collection().find_one({"_id": oid})
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
-    if session["questions_answered"] < 10:
+    if session["questions_answered"] < MAX_QUESTIONS:
         raise HTTPException(
             status_code=400,
-            detail=f"Answer at least 10 questions first ({session['questions_answered']}/10 completed)",
+            detail=f"Complete all {MAX_QUESTIONS} questions first ({session['questions_answered']}/{MAX_QUESTIONS} completed)",
         )
 
     # Compute per-topic accuracy
